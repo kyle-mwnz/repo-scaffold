@@ -34,7 +34,7 @@ api_type:
 
 _dotnet_version:
   type: str
-  default: "10.0"
+  default: "net10.0"
   when: false
 
 _pascal_case_name:

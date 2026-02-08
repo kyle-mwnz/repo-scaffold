@@ -10,9 +10,9 @@ Before you begin, ensure you have the following installed:
 |------|---------|--------------|
 | Copier | 9.0+ | `pipx install copier` |
 | Azure Functions Core Tools | 4.x | [Install Guide](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local#install-the-azure-functions-core-tools) |
-| .NET SDK | 8.0+ | [Download](https://dotnet.microsoft.com/download) |
-| Azure CLI | Latest | [Install Guide](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) |
+| .NET SDK | 10.0+ | [Download](https://dotnet.microsoft.com/download) |
 | Git | Latest | [Download](https://git-scm.com/downloads) |
+| Git Credential Manager | Latest | [Download](https://github.com/git-ecosystem/git-credential-manager/releases) |
 
 ### Verify Installation
 
@@ -26,14 +26,95 @@ func --version
 # Check .NET SDK
 dotnet --version
 
-# Check Azure CLI
-az --version
-
-# Login to Azure (required for repo creation)
-az login
-az extension add --name azure-devops
-az devops configure --defaults organization=https://dev.azure.com/yourorg project=YourProject
+# Check Git Credential Manager
+git credential-manager --version
 ```
+
+## Azure DevOps Authentication
+
+Copier uses `git clone` to fetch the template repository. For Azure DevOps HTTPS URLs, you need to configure authentication.
+
+### Option 1: Git Credential Manager (Recommended)
+
+Git Credential Manager (GCM) handles authentication automatically and securely. On first use, it will open a browser window for you to authenticate with Azure DevOps.
+
+**Installation:**
+
+```bash
+# macOS
+brew install git-credential-manager
+
+# Windows (included with Git for Windows)
+# Already installed if you have Git for Windows
+
+# Linux
+# Download from https://github.com/git-ecosystem/git-credential-manager/releases
+```
+
+**Configuration:**
+
+```bash
+# Configure git to use GCM (usually automatic)
+git config --global credential.helper manager
+
+# For Azure DevOps specifically
+git config --global credential.https://dev.azure.com.useHttpPath true
+```
+
+**First Use:**
+
+When you run `copier copy https://dev.azure.com/...`, GCM will:
+1. Open a browser window
+2. Prompt you to sign in to Azure DevOps
+3. Cache your credentials securely for future use
+
+### Option 2: Personal Access Token (PAT)
+
+If you can't use Git Credential Manager, create a Personal Access Token:
+
+1. Go to Azure DevOps > User Settings > Personal Access Tokens
+2. Click "New Token"
+3. Give it a name (e.g., "Copier CLI")
+4. Set expiration as needed
+5. Select scope: **Code (Read)**
+6. Click "Create" and copy the token
+
+**Using the PAT:**
+
+```bash
+# Option A: Configure git credential store (will prompt once, then remember)
+git config --global credential.helper store
+
+# Then run copier - when prompted:
+# - Username: anything (e.g., your email)
+# - Password: paste your PAT
+copier copy https://dev.azure.com/yourorg/yourproject/_git/repo-scaffolds ./
+
+# Option B: Embed in URL (less secure, avoid in shared scripts)
+copier copy https://PAT@dev.azure.com/yourorg/yourproject/_git/repo-scaffolds ./
+```
+
+### Troubleshooting Authentication
+
+**"Repository not found" or "Authentication failed"**
+
+1. Verify the URL is correct:
+   ```
+   https://dev.azure.com/{org}/{project}/_git/{repo-name}
+   ```
+
+2. Check you have access to the repository in Azure DevOps
+
+3. Clear cached credentials and try again:
+   ```bash
+   # Clear GCM cache for Azure DevOps
+   git credential-manager erase
+   # Enter: protocol=https
+   # Enter: host=dev.azure.com
+   # Press Enter twice
+   ```
+
+4. If using PAT, verify it hasn't expired and has **Code (Read)** scope
 
 ## Creating a New Project
 
@@ -52,34 +133,17 @@ copier copy /path/to/repo-scaffolds ./
 
 ### Step 2: Answer the Prompts
 
-You'll be asked a series of questions:
+You'll be asked only **2 questions**:
 
 ```
 🎤 Project name (lowercase, alphanumeric, hyphens only):
 > customer-orders
-
-🎤 Short description of the project:
-> Handles customer order processing and notifications
 
 🎤 What type of API/service is this?
   (1) REST API (HTTP triggers, OpenAPI)
   (2) SOAP API (HTTP triggers, XML/WSDL)
   (3) Event-driven (Service Bus triggers)
 > 1
-
-🎤 .NET version for Azure Functions:
-  (1) 8.0
-  (2) 9.0
-> 1
-
-🎤 Azure DevOps organization URL:
-> https://dev.azure.com/yourorg
-
-🎤 Azure DevOps project name:
-> YourProject
-
-🎤 Create Azure DevOps repository automatically? [Y/n]:
-> Y
 ```
 
 ### Step 3: Wait for Generation
@@ -87,12 +151,10 @@ You'll be asked a series of questions:
 Copier will:
 
 1. Generate project files from templates
-2. Run `func init` to create the Azure Functions project
-3. Run `func new` to create the initial function
-4. Create a test project
-5. Initialize git repository
-6. Create Azure DevOps repository (if selected)
-7. Push initial commit
+2. Run `func init` to create the Azure Functions project (.NET 10 isolated)
+3. Run `func new` to create the initial function(s)
+4. Create a test project with xUnit
+5. Initialize git repository with initial commit
 
 ```
 Copying from template
@@ -103,12 +165,10 @@ Copying from template
     create  customer-orders/infra/
     ...
 
-Running task 1 of 6: func init CustomerOrders.Functions...
-Running task 2 of 6: func new --name HealthCheck...
-Running task 3 of 6: dotnet new xunit...
-Running task 4 of 6: git init...
-Running task 5 of 6: az repos create...
-Running task 6 of 6: git push...
+Running task 1 of 4: func init CustomerOrders.Functions...
+Running task 2 of 4: func new --name HealthCheck...
+Running task 3 of 4: dotnet new xunit...
+Running task 4 of 4: git init...
 
 Done! Created project at ./customer-orders
 ```
@@ -129,9 +189,9 @@ customer-orders/
 ├── .copier-answers.yml          # Template tracking (commit this!)
 ├── .gitignore
 ├── README.md
-├── azure-pipelines.yml          # CI/CD pipeline configuration
+├── azure-pipelines.yml          # Standalone build pipeline
 ├── infra/
-│   ├── main.bicep               # Infrastructure definition
+│   ├── main.bicep               # Hello world infrastructure
 │   └── parameters/
 │       ├── nonprod.bicepparam   # NonProd environment parameters
 │       └── prod.bicepparam      # Prod environment parameters
@@ -141,7 +201,8 @@ customer-orders/
 │       ├── Program.cs
 │       ├── host.json
 │       ├── local.settings.json
-│       └── HealthCheck.cs       # Initial function
+│       ├── HealthCheck.cs       # Health check function
+│       └── CustomerOrdersApi.cs # Main API function (REST) or other based on api_type
 └── tests/
     └── CustomerOrders.Functions.Tests/
         └── CustomerOrders.Functions.Tests.csproj
@@ -205,31 +266,24 @@ Edit `src/CustomerOrders.Functions/local.settings.json` for local configuration:
 
 ### Understanding the Bicep Files
 
-`infra/main.bicep` defines your Azure resources. It references centrally-managed modules:
+`infra/main.bicep` defines your Azure resources as a simple "hello world" stack:
+
+- **Storage Account** - Required for Azure Functions
+- **App Service Plan** - Consumption plan (Y1)
+- **Function App** - Linux, .NET 10 isolated worker
 
 ```bicep
-// References a shared module from the Bicep registry
-module functionApp 'br:yourorgbicepregistry.azurecr.io/bicep/function-app:latest' = {
-  name: 'deploy-functionapp'
-  params: {
-    name: 'func-customer-orders-${environment}-aue'
-    // ...
-  }
-}
+// Example resource naming
+var functionAppName = 'func-${projectName}-${environment}-aue'
+var storageAccountName = 'st${replace(projectName, '-', '')}${environment}aue'
 ```
 
 ### Modifying Infrastructure
 
-To add or modify resources:
-
-1. Edit `infra/main.bicep`
-2. Use existing modules from the registry where possible
-3. For custom resources, add them directly to the Bicep file
-
-Example - adding a custom resource:
+To add or modify resources, edit `infra/main.bicep` directly:
 
 ```bicep
-// Custom resource not in the central registry
+// Add a custom resource
 resource customResource 'Microsoft.SomeProvider/resources@2023-01-01' = {
   name: 'custom-${nameSuffix}'
   location: location
@@ -270,52 +324,29 @@ az deployment group what-if \
   --parameters infra/parameters/nonprod.bicepparam
 ```
 
-## Working with Pipelines
+## Working with the Pipeline
 
 ### Pipeline Structure
 
-Your `azure-pipelines.yml` extends central templates:
+Your `azure-pipelines.yml` is a standalone build pipeline that:
 
-```yaml
-extends:
-  template: pipelines/function-app-rest.yml@templates
-  parameters:
-    projectName: $(projectName)
-    # ...
-```
+1. Builds the .NET project
+2. Runs tests
+3. Publishes build artifacts
 
-This means:
-- Build and deploy logic is managed centrally
-- You only configure project-specific parameters
-- Updates to central templates apply automatically
+**Note:** This is a simplified "hello world" pipeline. Deployment stages can be added as needed.
 
 ### Triggering Pipelines
 
-Pipelines trigger automatically on:
-- Push to `main` branch
-- Pull request to `main` branch
+To run the pipeline:
+1. Push your code to Azure DevOps
+2. Go to Azure DevOps > Pipelines
+3. Create a new pipeline pointing to your repository
+4. Select the existing `azure-pipelines.yml`
 
-To run manually:
-1. Go to Azure DevOps → Pipelines
-2. Select your pipeline
-3. Click "Run pipeline"
+### Customizing the Pipeline
 
-### Pipeline Stages
-
-| Stage | Description | Trigger |
-|-------|-------------|---------|
-| Build | Compile, test, package | Every commit |
-| Infrastructure_nonprod | Deploy Bicep to nonprod | After Build |
-| Deploy_nonprod | Deploy function to nonprod | After Infrastructure |
-| Infrastructure_prod | Deploy Bicep to prod | After nonprod (with approval) |
-| Deploy_prod | Deploy function to prod | After Infrastructure_prod |
-
-### Viewing Pipeline Results
-
-1. Go to Azure DevOps → Pipelines → your-pipeline
-2. Click on a run to see stages
-3. Click on a stage to see jobs
-4. Click on a job to see step logs
+Edit `azure-pipelines.yml` to add deployment stages, additional tests, or other steps as needed.
 
 ## Updating Your Project
 
@@ -335,7 +366,7 @@ Copier will:
 
 **What gets updated:**
 - `azure-pipelines.yml` structure
-- `infra/main.bicep` module references
+- `infra/main.bicep` template changes
 - Configuration files
 
 **What's preserved:**
@@ -358,15 +389,22 @@ Conflict in azure-pipelines.yml
 
 Review the diff and choose how to resolve.
 
-### Skipping Updates
+## Troubleshooting
 
-To skip updating specific files:
+### Scaffold Fails: "Repository not found" or Authentication Error
+
+See [Azure DevOps Authentication](#azure-devops-authentication) above. Common fixes:
 
 ```bash
-copier update --skip azure-pipelines.yml
-```
+# Clear cached credentials
+git credential-manager erase
+# Enter: protocol=https
+# Enter: host=dev.azure.com
+# Press Enter twice
 
-## Troubleshooting
+# Then try again
+copier copy https://dev.azure.com/yourorg/yourproject/_git/repo-scaffolds ./
+```
 
 ### Scaffold Fails: "func not found"
 
@@ -380,23 +418,9 @@ brew install azure-functions-core-tools@4
 npm install -g azure-functions-core-tools@4 --unsafe-perm true
 ```
 
-### Scaffold Fails: "az repos create failed"
+### Scaffold Fails: "dotnet not found"
 
-1. Check you're logged in: `az login`
-2. Check DevOps extension: `az extension add --name azure-devops`
-3. Check permissions in Azure DevOps project
-
-### Pipeline Fails: "Template not found"
-
-1. Verify `pipeline-templates` repository exists
-2. Check repository name in `resources.repositories`
-3. Ensure service account has read access
-
-### Bicep Fails: "Module not found"
-
-1. Check ACR name in module reference
-2. Verify module version exists: `az acr repository show-tags --name yourorgbicepregistry --repository bicep/function-app`
-3. Check service connection has ACR pull permissions
+Install .NET SDK 10.0 or later from [dotnet.microsoft.com](https://dotnet.microsoft.com/download).
 
 ### Local Run Fails: "Storage emulator not found"
 
@@ -411,6 +435,16 @@ azurite --silent --location ./azurite --debug ./azurite/debug.log
 ```
 
 Or use a real storage account in `local.settings.json`.
+
+### Bicep Validation Fails
+
+```bash
+# Check Bicep CLI is installed
+az bicep version
+
+# Upgrade Bicep
+az bicep upgrade
+```
 
 ## Best Practices
 
@@ -446,19 +480,6 @@ var host = new HostBuilder()
 host.Run();
 ```
 
-### Configuration
-
-Use configuration providers:
-
-```csharp
-// In Program.cs
-.ConfigureAppConfiguration(config =>
-{
-    config.AddEnvironmentVariables();
-    config.AddAzureKeyVault(/* ... */);
-})
-```
-
 ### Testing
 
 Write unit tests for business logic:
@@ -487,20 +508,12 @@ public class OrderServiceTests
 - Never commit secrets to source control
 - Use Azure Key Vault for sensitive configuration
 - Use managed identities for Azure service authentication
-- Review OWASP guidelines for function security
-
-## Getting Help
-
-- **Template issues:** Open an issue in the `repo-scaffolds` repository
-- **Pipeline issues:** Check the `pipeline-templates` repository
-- **Infrastructure issues:** Check the `bicep-registry` repository
-- **General questions:** Contact the platform team
 
 ## Quick Reference
 
 | Task | Command |
 |------|---------|
-| Create new project | `copier copy https://dev.azure.com/yourorg/yourproject/_git/repo-scaffolds ./` |
+| Create new project | `copier copy https://dev.azure.com/.../repo-scaffolds ./` |
 | Update project | `copier update` |
 | Run locally | `func start` |
 | Add function | `func new --name Name --template "Template"` |
@@ -512,6 +525,4 @@ public class OrderServiceTests
 
 - [Architecture Overview](../ARCHITECTURE.md)
 - [Copier Template](./copier-template.md)
-- [Pipeline Templates](./pipeline-templates.md)
-- [Bicep Modules](./bicep-modules.md)
 - [Naming Conventions](./naming-conventions.md)
