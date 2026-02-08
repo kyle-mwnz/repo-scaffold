@@ -1,0 +1,96 @@
+# Copier template configuration for Azure Functions repository scaffolding
+# Documentation: https://copier.readthedocs.io/
+
+_min_copier_version: "9.0.0"
+_subdirectory: "project"
+_answers_file: .copier-answers.yml
+
+# ============================================
+# Questions (User Prompts)
+# ============================================
+
+project_name:
+  type: str
+  help: |
+    Project name (lowercase, alphanumeric, hyphens only).
+    This will be used to generate all Azure resource names.
+    Examples: customer-orders, payment-processor, inventory-sync
+  validator: >-
+    {% if not (project_name | regex_search('^[a-z][a-z0-9-]{2,20}$')) %}
+    Must be 3-21 characters, lowercase alphanumeric with hyphens, starting with a letter
+    {% endif %}
+
+api_type:
+  type: str
+  help: What type of API/service is this?
+  choices:
+    REST API (HTTP triggers, OpenAPI): rest
+    SOAP API (HTTP triggers, XML/WSDL): soap
+    Event-driven (Service Bus triggers): event
+
+# ============================================
+# Computed Variables (Hidden from User)
+# ============================================
+
+_dotnet_version:
+  type: str
+  default: "10.0"
+  when: false
+
+_pascal_case_name:
+  type: str
+  default: "{{ project_name | replace('-', ' ') | title | replace(' ', '') }}"
+  when: false
+
+# ============================================
+# Post-Generation Tasks
+# ============================================
+
+_tasks:
+  # Initialize .NET Azure Functions project
+  - >-
+    cd {{ project_name }} &&
+    cd src &&
+    func init {{ _pascal_case_name }}.Functions
+    --worker-runtime dotnet-isolated
+    --target-framework net{{ _dotnet_version }}
+
+  # Create initial function based on API type
+  - >-
+    cd {{ project_name }}/src/{{ _pascal_case_name }}.Functions &&
+    {% if api_type == 'rest' %}
+    func new --name HealthCheck --template "HTTP trigger" --authlevel anonymous &&
+    func new --name {{ _pascal_case_name }}Api --template "HTTP trigger" --authlevel function
+    {% elif api_type == 'soap' %}
+    func new --name HealthCheck --template "HTTP trigger" --authlevel anonymous &&
+    func new --name SoapEndpoint --template "HTTP trigger" --authlevel function
+    {% elif api_type == 'event' %}
+    func new --name HealthCheck --template "HTTP trigger" --authlevel anonymous &&
+    func new --name ProcessMessage --template "Azure Service Bus Queue trigger"
+    {% endif %}
+
+  # Create test project
+  - >-
+    cd {{ project_name }}/tests &&
+    dotnet new xunit -n {{ _pascal_case_name }}.Functions.Tests &&
+    cd {{ _pascal_case_name }}.Functions.Tests &&
+    dotnet add reference ../../src/{{ _pascal_case_name }}.Functions/{{ _pascal_case_name }}.Functions.csproj
+
+  # Initialize git repository
+  - "cd {{ project_name }} && git init && git add . && git commit -m 'Initial scaffold from repo-scaffolds template'"
+
+# ============================================
+# File Handling
+# ============================================
+
+_exclude:
+  - "copier.yml"
+  - "copier.yaml"
+  - "docs"
+  - "ARCHITECTURE.md"
+  - "README.md"
+  - ".git"
+  - "__pycache__"
+  - "*.pyc"
+  - "bicep-modules"
+  - "pipeline-templates"

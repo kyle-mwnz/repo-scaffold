@@ -1,0 +1,86 @@
+# Azure Pipeline for {{ project_name }}
+# Generated from repo-scaffolds template
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - "*.md"
+      - ".copier-answers.yml"
+
+pr:
+  branches:
+    include:
+      - main
+
+variables:
+  projectName: '{{ project_name }}'
+  dotnetVersion: '{{ _dotnet_version }}'
+
+stages:
+  # ============================================
+  # Build Stage
+  # ============================================
+  - stage: Build
+    displayName: 'Build & Test'
+    jobs:
+      - job: Build
+        displayName: 'Build .NET Project'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: UseDotNet@2
+            displayName: 'Install .NET SDK'
+            inputs:
+              packageType: 'sdk'
+              version: '$(dotnetVersion).x'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Restore'
+            inputs:
+              command: 'restore'
+              projects: 'src/**/*.csproj'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Build'
+            inputs:
+              command: 'build'
+              projects: 'src/**/*.csproj'
+              arguments: '--configuration Release --no-restore'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Test'
+            inputs:
+              command: 'test'
+              projects: 'tests/**/*.csproj'
+              arguments: '--configuration Release'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Publish'
+            inputs:
+              command: 'publish'
+              projects: 'src/**/*.csproj'
+              arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/app'
+              publishWebProjects: false
+              zipAfterPublish: true
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish App Artifact'
+            inputs:
+              pathToPublish: '$(Build.ArtifactStagingDirectory)/app'
+              artifactName: 'function-app'
+
+          - task: CopyFiles@2
+            displayName: 'Copy Bicep Files'
+            inputs:
+              sourceFolder: 'infra'
+              contents: '**'
+              targetFolder: '$(Build.ArtifactStagingDirectory)/infra'
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Infra Artifact'
+            inputs:
+              pathToPublish: '$(Build.ArtifactStagingDirectory)/infra'
+              artifactName: 'infrastructure'

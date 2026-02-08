@@ -1,0 +1,51 @@
+# {{ project_name }}
+
+Azure Functions service ({{ api_type }} API).
+
+## Getting Started
+
+### Prerequisites
+
+- [.NET SDK {{ _dotnet_version }}](https://dotnet.microsoft.com/download)
+- [Azure Functions Core Tools v4](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local)
+
+### Local Development
+
+```bash
+cd src/{{ _pascal_case_name }}.Functions
+dotnet restore
+func start
+```
+
+The function will be available at `http://localhost:7071`.
+
+### Running Tests
+
+```bash
+cd tests/{{ _pascal_case_name }}.Functions.Tests
+dotnet test
+```
+
+## Project Structure
+
+```
+{{ project_name }}/
+├── azure-pipelines.yml
+├── infra/
+│   ├── main.bicep
+│   └── parameters/
+│       ├── nonprod.bicepparam
+│       └── prod.bicepparam
+├── src/
+│   └── {{ _pascal_case_name }}.Functions/
+└── tests/
+    └── {{ _pascal_case_name }}.Functions.Tests/
+```
+
+## Azure Resources
+
+| Resource | NonProd | Prod |
+|----------|---------|------|
+| Resource Group | `rg-{{ project_name }}-nonprod-aue` | `rg-{{ project_name }}-prod-aue` |
+| Function App | `func-{{ project_name }}-nonprod-aue` | `func-{{ project_name }}-prod-aue` |
+| Storage Account | `st{{ project_name | replace('-', '') }}nonprodaue` | `st{{ project_name | replace('-', '') }}prodaue` |

@@ -1,0 +1,115 @@
+// Infrastructure for {{ project_name }}
+// Generated from repo-scaffolds template
+
+targetScope = 'resourceGroup'
+
+// ============================================
+// Parameters
+// ============================================
+
+@description('Environment name (nonprod/prod)')
+@allowed(['nonprod', 'prod'])
+param environment string
+
+@description('Location for resources')
+param location string = 'australiaeast'
+
+// ============================================
+// Variables
+// ============================================
+
+var projectName = '{{ project_name }}'
+var nameSuffix = '${projectName}-${environment}-aue'
+
+var commonTags = {
+  project: projectName
+  environment: environment
+  'managed-by': 'bicep'
+}
+
+// ============================================
+// Storage Account (required for Function App)
+// ============================================
+
+resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
+  name: 'st${replace(projectName, '-', '')}${environment}aue'
+  location: location
+  tags: commonTags
+  sku: {
+    name: 'Standard_LRS'
+  }
+  kind: 'StorageV2'
+  properties: {
+    supportsHttpsTrafficOnly: true
+    minimumTlsVersion: 'TLS1_2'
+  }
+}
+
+// ============================================
+// App Service Plan (Consumption)
+// ============================================
+
+resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
+  name: 'asp-${nameSuffix}'
+  location: location
+  tags: commonTags
+  sku: {
+    name: 'Y1'
+    tier: 'Dynamic'
+  }
+  properties: {
+    reserved: true
+  }
+}
+
+// ============================================
+// Function App
+// ============================================
+
+resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
+  name: 'func-${nameSuffix}'
+  location: location
+  tags: commonTags
+  kind: 'functionapp,linux'
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    serverFarmId: appServicePlan.id
+    httpsOnly: true
+    siteConfig: {
+      linuxFxVersion: 'DOTNET-ISOLATED|{{ _dotnet_version }}'
+      ftpsState: 'Disabled'
+      minTlsVersion: '1.2'
+      appSettings: [
+        {
+          name: 'AzureWebJobsStorage'
+          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${az.environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
+        }
+        {
+          name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
+          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${az.environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
+        }
+        {
+          name: 'WEBSITE_CONTENTSHARE'
+          value: toLower('func-${nameSuffix}')
+        }
+        {
+          name: 'FUNCTIONS_EXTENSION_VERSION'
+          value: '~4'
+        }
+        {
+          name: 'FUNCTIONS_WORKER_RUNTIME'
+          value: 'dotnet-isolated'
+        }
+      ]
+    }
+  }
+}
+
+// ============================================
+// Outputs
+// ============================================
+
+output functionAppName string = functionApp.name
+output functionAppUrl string = functionApp.properties.defaultHostName
