@@ -1,4 +1,4 @@
-# {{ project_name }}
+# {{ serviceapplication_name }}
 
 Azure Functions service ({{ api_type }} API).
 
@@ -29,7 +29,7 @@ dotnet test
 ## Project Structure
 
 ```
-{{ project_name }}/
+{{ serviceapplication_name }}/
 ├── azure-pipelines.yml
 ├── infra/
 │   ├── main.bicep
@@ -46,6 +46,6 @@ dotnet test
 
 | Resource | NonProd | Prod |
 |----------|---------|------|
-| Resource Group | `rg-{{ project_name }}-nonprod-aue` | `rg-{{ project_name }}-prod-aue` |
-| Function App | `func-{{ project_name }}-nonprod-aue` | `func-{{ project_name }}-prod-aue` |
-| Storage Account | `st{{ project_name | replace('-', '') }}nonprodaue` | `st{{ project_name | replace('-', '') }}prodaue` |
+| Resource Group | `rg-{{ serviceapplication_name }}-nonprod-aue` | `rg-{{ serviceapplication_name }}-prod-aue` |
+| Function App | `func-{{ serviceapplication_name }}-nonprod-aue` | `func-{{ serviceapplication_name }}-prod-aue` |
+| Storage Account | `st{{ serviceapplication_name | replace('-', '') }}nonprodaue` | `st{{ serviceapplication_name | replace('-', '') }}prodaue` |

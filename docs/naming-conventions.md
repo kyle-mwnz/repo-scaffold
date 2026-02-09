@@ -4,16 +4,16 @@ This document defines the naming conventions for Azure resources and repositorie
 
 ## Overview
 
-All resource names are **derived from the project name** using consistent patterns. This ensures:
+All resource names are **derived from the serviceapplication name** using consistent patterns. This ensures:
 
 - **Predictability** - Know resource names without looking them up
 - **Consistency** - All projects follow the same patterns
 - **Compliance** - Names meet Azure naming rules automatically
 - **Discoverability** - Easy to find related resources
 
-## Project Name Rules
+## serviceapplication name Rules
 
-The project name is the foundation for all other names. It must:
+The serviceapplication name is the foundation for all other names. It must:
 
 | Rule | Requirement | Example |
 |------|-------------|---------|
@@ -53,7 +53,7 @@ The project name is the foundation for all other names. It must:
 - Lowercase letters and numbers only (no hyphens)
 - Must be globally unique
 
-For long project names, the storage account name may need truncation.
+For long serviceapplication names, the storage account name may need truncation.
 
 ### .NET Projects
 
@@ -91,7 +91,7 @@ For long project names, the storage account name may need truncation.
 
 ## Complete Example
 
-For project name `customer-orders`:
+For serviceapplication name `customer-orders`:
 
 | Resource | NonProd Name | Prod Name |
 |----------|--------------|-----------|
@@ -107,13 +107,13 @@ For project name `customer-orders`:
 In `copier.yml`, computed variables derive names:
 
 ```yaml
-project_name:
+serviceapplication_name:
   type: str
-  validator: "{% if not (project_name | regex_search('^[a-z][a-z0-9-]{2,20}$')) %}Invalid{% endif %}"
+  validator: "{% if not (serviceapplication_name | regex_search('^[a-z][a-z0-9-]{2,20}$')) %}Invalid{% endif %}"
 
 pascal_case_name:
   type: str
-  default: "{{ project_name | replace('-', ' ') | title | replace(' ', '') }}"
+  default: "{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}"
   when: false
 ```
 
@@ -122,7 +122,7 @@ pascal_case_name:
 In `main.bicep.jinja`:
 
 ```bicep
-var projectName = '{{ project_name }}'
+var projectName = '{{ serviceapplication_name }}'
 var nameSuffix = '${projectName}-${environment}-aue'
 var storageNameSuffix = '${replace(projectName, '-', '')}${environment}aue'
 
@@ -133,16 +133,16 @@ var storageAccountName = 'st${storageNameSuffix}'
 
 ## Handling Edge Cases
 
-### Long Project Names
+### Long serviceapplication names
 
-Storage accounts have a 24-character limit. For long project names:
+Storage accounts have a 24-character limit. For long serviceapplication names:
 
 ```
 project: customer-order-processor (24 chars)
 storage: stcustomerorderprocessorprodaue (32 chars - TOO LONG)
 ```
 
-**Recommendation:** Keep project names under 15 characters to avoid truncation.
+**Recommendation:** Keep serviceapplication names under 15 characters to avoid truncation.
 
 ### Global Uniqueness
 
@@ -177,11 +177,11 @@ The convention uses only characters valid for all resource types.
 ### In Copier Template
 
 ```yaml
-project_name:
+serviceapplication_name:
   type: str
   validator: >-
-    {% if not (project_name | regex_search('^[a-z][a-z0-9-]{2,20}$')) %}
-    Project name must be 3-21 characters, lowercase alphanumeric with hyphens, starting with a letter.
+    {% if not (serviceapplication_name | regex_search('^[a-z][a-z0-9-]{2,20}$')) %}
+    serviceapplication name must be 3-21 characters, lowercase alphanumeric with hyphens, starting with a letter.
     Examples: customer-orders, payment-api, inventory-sync
     {% endif %}
 ```
@@ -189,7 +189,7 @@ project_name:
 ### In Bicep
 
 ```bicep
-@description('Project name')
+@description('serviceapplication name')
 @minLength(3)
 @maxLength(21)
 param projectName string

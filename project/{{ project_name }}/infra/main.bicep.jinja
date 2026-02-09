@@ -1,4 +1,4 @@
-// Infrastructure for {{ project_name }}
+// Infrastructure for {{ serviceapplication_name }}
 // Generated from repo-scaffolds template
 
 targetScope = 'resourceGroup'
@@ -18,7 +18,7 @@ param location string = 'australiaeast'
 // Variables
 // ============================================
 
-var projectName = '{{ project_name }}'
+var projectName = '{{ serviceapplication_name }}'
 var nameSuffix = '${projectName}-${environment}-aue'
 
 var commonTags = {

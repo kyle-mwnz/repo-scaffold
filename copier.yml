@@ -9,14 +9,14 @@ _answers_file: .copier-answers.yml
 # Questions (User Prompts)
 # ============================================
 
-project_name:
+serviceapplication_name:
   type: str
   help: |
-    Project name (lowercase, alphanumeric, hyphens only).
+    serviceapplication name (lowercase, alphanumeric, hyphens only).
     This will be used to generate all Azure resource names.
     Examples: customer-orders, payment-processor, inventory-sync
   validator: >-
-    {% if not (project_name | regex_search('^[a-z][a-z0-9-]{2,20}$')) %}
+    {% if not (serviceapplication_name | regex_search('^[a-z][a-z0-9-]{2,20}$')) %}
     Must be 3-21 characters, lowercase alphanumeric with hyphens, starting with a letter
     {% endif %}
 
@@ -41,7 +41,7 @@ dotnet_version:
 
 pascal_case_name:
   type: str
-  default: "{{ project_name | replace('-', ' ') | title | replace(' ', '') }}"
+  default: "{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}"
   when: false
 
 # ============================================
@@ -54,17 +54,17 @@ pascal_case_name:
 _tasks:
   # Initialize .NET Azure Functions project
   - >-
-    cd {{ project_name }}/src &&
-    func init {{ project_name | replace('-', ' ') | title | replace(' ', '') }}.Functions
+    cd {{ serviceapplication_name }}/src &&
+    func init {{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions
     --worker-runtime dotnet-isolated
     --target-framework net10.0
 
   # Create initial function based on API type
   - >-
-    cd {{ project_name }}/src/{{ project_name | replace('-', ' ') | title | replace(' ', '') }}.Functions &&
+    cd {{ serviceapplication_name }}/src/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions &&
     {% if api_type == 'rest' %}
     func new --name HealthCheck --template "HTTP trigger" --authlevel anonymous &&
-    func new --name {{ project_name | replace('-', ' ') | title | replace(' ', '') }}Api --template "HTTP trigger" --authlevel function
+    func new --name {{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}Api --template "HTTP trigger" --authlevel function
     {% elif api_type == 'soap' %}
     func new --name HealthCheck --template "HTTP trigger" --authlevel anonymous &&
     func new --name SoapEndpoint --template "HTTP trigger" --authlevel function
@@ -75,13 +75,13 @@ _tasks:
 
   # Create test project
   - >-
-    cd {{ project_name }}/tests &&
-    dotnet new xunit -n {{ project_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.Tests &&
-    cd {{ project_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.Tests &&
-    dotnet add reference ../../src/{{ project_name | replace('-', ' ') | title | replace(' ', '') }}.Functions/{{ project_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.csproj
+    cd {{ serviceapplication_name }}/tests &&
+    dotnet new xunit -n {{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.Tests &&
+    cd {{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.Tests &&
+    dotnet add reference ../../src/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.csproj
 
   # Initialize git repository
-  - "cd {{ project_name }} && git init && git add . && git commit -m 'Initial scaffold from repo-scaffolds template'"
+  - "cd {{ serviceapplication_name }} && git init && git add . && git commit -m 'Initial scaffold from repo-scaffolds template'"
 
 # ============================================
 # File Handling

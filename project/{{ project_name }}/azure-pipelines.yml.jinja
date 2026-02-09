@@ -1,4 +1,4 @@
-# Azure Pipeline for {{ project_name }}
+# Azure Pipeline for {{ serviceapplication_name }}
 # Generated from repo-scaffolds template
 
 trigger:
@@ -16,7 +16,7 @@ pr:
       - main
 
 variables:
-  projectName: '{{ project_name }}'
+  projectName: '{{ serviceapplication_name }}'
   dotnetVersion: '{{ dotnet_version }}'
 
 stages:

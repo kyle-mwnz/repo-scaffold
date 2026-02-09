@@ -20,7 +20,7 @@ You'll be prompted for:
 
 | Prompt | Description | Example |
 |--------|-------------|---------|
-| Project name | Lowercase, alphanumeric with hyphens | `customer-orders` |
+| serviceapplication name | Lowercase, alphanumeric with hyphens | `customer-orders` |
 | API type | REST, SOAP, or Event-driven | `REST API` |
 
 ### What Gets Created
@@ -86,7 +86,7 @@ copier update
 repo-scaffolds/
 ├── copier.yml                   # Template configuration
 ├── project/
-│   └── {{ project_name }}/      # Templated project files
+│   └── {{ serviceapplication_name }}/      # Templated project files
 ├── docs/                        # Documentation
 └── README.md
 ```

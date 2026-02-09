@@ -136,7 +136,7 @@ copier copy /path/to/repo-scaffolds ./
 You'll be asked only **2 questions**:
 
 ```
-🎤 Project name (lowercase, alphanumeric, hyphens only):
+🎤 serviceapplication name (lowercase, alphanumeric, hyphens only):
 > customer-orders
 
 🎤 What type of API/service is this?
