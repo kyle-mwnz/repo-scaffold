@@ -52,37 +52,60 @@ pascal_case_name:
 # with 'when: false' are not available in tasks
 
 _tasks:
-  # Pre-check: verify required CLI tools are installed
-  - >-
-    echo "Checking required tools..." &&
-    (command -v func >/dev/null 2>&1 || { echo "ERROR: Azure Functions Core Tools (func) not found. Install from https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local"; exit 1; }) &&
-    (command -v dotnet >/dev/null 2>&1 || { echo "ERROR: .NET SDK (dotnet) not found. Install from https://dotnet.microsoft.com/download"; exit 1; }) &&
-    (command -v git >/dev/null 2>&1 || { echo "ERROR: Git not found. Install from https://git-scm.com/downloads"; exit 1; }) &&
-    echo "All required tools found."
+  # Pre-check: verify required CLI tools are installed (Unix)
+  - command: >-
+      echo "Checking required tools..." &&
+      (command -v func >/dev/null 2>&1 || { echo "ERROR: Azure Functions Core Tools (func) not found. Install from https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local"; exit 1; }) &&
+      (command -v dotnet >/dev/null 2>&1 || { echo "ERROR: .NET SDK (dotnet) not found. Install from https://dotnet.microsoft.com/download"; exit 1; }) &&
+      (command -v git >/dev/null 2>&1 || { echo "ERROR: Git not found. Install from https://git-scm.com/downloads"; exit 1; }) &&
+      echo "All required tools found."
+    when: "{{ _copier_conf.os != 'windows' }}"
+
+  # Pre-check: verify required CLI tools are installed (Windows)
+  - command: >-
+      where func >nul 2>&1 || (echo ERROR: Azure Functions Core Tools not found. Install from https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local && exit /b 1) &&
+      where dotnet >nul 2>&1 || (echo ERROR: .NET SDK not found. Install from https://dotnet.microsoft.com/download && exit /b 1) &&
+      where git >nul 2>&1 || (echo ERROR: Git not found. Install from https://git-scm.com/downloads && exit /b 1) &&
+      echo All required tools found.
+    when: "{{ _copier_conf.os == 'windows' }}"
 
   # Initialize .NET Azure Functions project
-  - >-
-    cd {{ serviceapplication_name }}-api/src &&
-    func init {{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions
-    --worker-runtime dotnet-isolated
-    --target-framework net10.0
+  - command: >-
+      func init {{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions
+      --worker-runtime dotnet-isolated
+      --target-framework net10.0
+    working_directory: "{{ serviceapplication_name }}-api/src"
 
-  # Create initial function based on API type
-  - >-
-    cd {{ serviceapplication_name }}-api/src/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions &&
-    func new --name HealthCheck --template "HTTP trigger" --authlevel anonymous &&
-    {% if api_type == 'event' %}
-    func new --name ProcessMessage --template "Azure Service Bus Queue trigger"
-    {% else %}
-    func new --name {{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}Api --template "HTTP trigger" --authlevel function
-    {% endif %}
+  # Create HealthCheck function
+  - command: >-
+      func new --name HealthCheck --template "HTTP trigger" --authlevel anonymous
+    working_directory: "{{ serviceapplication_name }}-api/src/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions"
+
+  # Create API/event function based on type
+  - command: >-
+      {% if api_type == 'event' %}
+      func new --name ProcessMessage --template "Azure Service Bus Queue trigger"
+      {% else %}
+      func new --name {{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}Api --template "HTTP trigger" --authlevel function
+      {% endif %}
+    working_directory: "{{ serviceapplication_name }}-api/src/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions"
 
   # Create test project
-  - >-
-    cd {{ serviceapplication_name }}-api/tests &&
-    dotnet new xunit -n {{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.Tests &&
-    cd {{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.Tests &&
-    dotnet add reference ../../src/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}_Functions.csproj
+  - command: >-
+      dotnet new xunit -n {{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.Tests
+    working_directory: "{{ serviceapplication_name }}-api/tests"
+
+  # Add project reference to test project
+  - command: >-
+      dotnet add reference ../../src/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}_Functions.csproj
+    working_directory: "{{ serviceapplication_name }}-api/tests/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.Tests"
 
   # Initialize git repository
-  - "cd {{ serviceapplication_name }}-api && git init && git add . && git commit -m 'Initial scaffold from repo-scaffolds template'"
+  - command: "git init"
+    working_directory: "{{ serviceapplication_name }}-api"
+
+  - command: "git add ."
+    working_directory: "{{ serviceapplication_name }}-api"
+
+  - command: "git commit -m 'Initial scaffold from repo-scaffolds template'"
+    working_directory: "{{ serviceapplication_name }}-api"
