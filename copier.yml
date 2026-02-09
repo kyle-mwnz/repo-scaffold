@@ -78,19 +78,3 @@ _tasks:
 
   # Initialize git repository
   - "cd {{ serviceapplication_name }}-api && git init && git add . && git commit -m 'Initial scaffold from repo-scaffolds template'"
-
-# ============================================
-# File Handling
-# ============================================
-
-_exclude:
-  - "copier.yml"
-  - "copier.yaml"
-  - "docs"
-  - "ARCHITECTURE.md"
-  - "README.md"
-  - ".git"
-  - "__pycache__"
-  - "*.pyc"
-  - "bicep-modules"
-  - "pipeline-templates"

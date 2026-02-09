@@ -1,23 +1,80 @@
-# {{ serviceapplication_name }}
+# {{ serviceapplication_name }}-api
 
-Azure Functions service ({{ api_type }} API).
+Azure Functions service ({{ api_type }}).
 
 ## Getting Started
 
 ### Prerequisites
 
-- [.NET SDK {{ dotnet_version }}](https://dotnet.microsoft.com/download)
+- [.NET SDK {{ dotnet_version }}](https://dotnet.microsoft.com/download/dotnet/{{ dotnet_version }})
 - [Azure Functions Core Tools v4](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local)
+- [Azurite](https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite) (local storage emulator)
 
-### Local Development
+### Running Locally
 
-```bash
-cd src/{{ pascal_case_name }}.Functions
-dotnet restore
-func start
+1. **Start Azurite** (in a separate terminal):
+
+   ```bash
+   azurite --silent --location ./azurite --debug ./azurite/debug.log
+   ```
+
+   Or if using VS Code, install the "Azurite" extension and start it from the command palette.
+
+2. **Run the Functions app**:
+
+   ```bash
+   cd src/{{ pascal_case_name }}.Functions
+   dotnet restore
+   func start
+   ```
+
+3. **Test the endpoints**:
+
+{% if api_type == 'event' %}
+   - Health check: `GET http://localhost:7071/api/HealthCheck`
+   - The `ProcessMessage` function is triggered by Service Bus messages, not HTTP requests.
+     To test locally, you'll need to configure a Service Bus connection string in `local.settings.json`.
+{% else %}
+   - Health check: `GET http://localhost:7071/api/HealthCheck`
+   - API endpoint: `GET http://localhost:7071/api/{{ pascal_case_name }}Api`
+
+   ```bash
+   # Health check
+   curl http://localhost:7071/api/HealthCheck
+
+   # API endpoint
+   curl http://localhost:7071/api/{{ pascal_case_name }}Api
+   ```
+{% endif %}
+
+### Local Settings
+
+The `local.settings.json` file contains configuration for local development. This file is not committed to source control.
+
+```json
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated"
+  }
+}
 ```
 
-The function will be available at `http://localhost:7071`.
+{% if api_type == 'event' %}
+To test Service Bus triggers locally, add your connection string:
+
+```json
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "ServiceBusConnection": "<your-service-bus-connection-string>"
+  }
+}
+```
+{% endif %}
 
 ### Running Tests
 
@@ -29,7 +86,7 @@ dotnet test
 ## Project Structure
 
 ```
-{{ serviceapplication_name }}/
+{{ serviceapplication_name }}-api/
 ├── azure-pipelines.yml
 ├── infra/
 │   ├── main.bicep
@@ -38,9 +95,26 @@ dotnet test
 │       └── prod.bicepparam
 ├── src/
 │   └── {{ pascal_case_name }}.Functions/
+│       ├── HealthCheck.cs
+{% if api_type == 'event' %}
+│       └── ProcessMessage.cs
+{% else %}
+│       └── {{ pascal_case_name }}Api.cs
+{% endif %}
 └── tests/
     └── {{ pascal_case_name }}.Functions.Tests/
 ```
+
+## API Endpoints
+
+| Endpoint | Method | Auth Level | Description |
+|----------|--------|------------|-------------|
+| `/api/HealthCheck` | GET | Anonymous | Health check endpoint |
+{% if api_type == 'event' %}
+| Service Bus Queue | N/A | N/A | Triggered by messages on the queue |
+{% else %}
+| `/api/{{ pascal_case_name }}Api` | GET | Function | Main API endpoint |
+{% endif %}
 
 ## Azure Resources
 
@@ -49,3 +123,11 @@ dotnet test
 | Resource Group | `rg-{{ serviceapplication_name }}-nonprod-aue` | `rg-{{ serviceapplication_name }}-prod-aue` |
 | Function App | `func-{{ serviceapplication_name }}-nonprod-aue` | `func-{{ serviceapplication_name }}-prod-aue` |
 | Storage Account | `st{{ serviceapplication_name | replace('-', '') }}nonprodaue` | `st{{ serviceapplication_name | replace('-', '') }}prodaue` |
+
+## Deployment
+
+The project includes an Azure Pipeline (`azure-pipelines.yml`) that builds and tests the application. To deploy:
+
+1. Push your code to Azure DevOps
+2. Create a pipeline pointing to `azure-pipelines.yml`
+3. Add deployment stages as needed for your environment
