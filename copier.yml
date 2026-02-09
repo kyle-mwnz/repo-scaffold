@@ -62,15 +62,11 @@ _tasks:
   # Create initial function based on API type
   - >-
     cd {{ serviceapplication_name }}/src/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions &&
-    {% if api_type == 'rest' %}
     func new --name HealthCheck --template "HTTP trigger" --authlevel anonymous &&
-    func new --name {{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}Api --template "HTTP trigger" --authlevel function
-    {% elif api_type == 'soap' %}
-    func new --name HealthCheck --template "HTTP trigger" --authlevel anonymous &&
-    func new --name SoapEndpoint --template "HTTP trigger" --authlevel function
-    {% elif api_type == 'event' %}
-    func new --name HealthCheck --template "HTTP trigger" --authlevel anonymous &&
+    {% if api_type == 'event' %}
     func new --name ProcessMessage --template "Azure Service Bus Queue trigger"
+    {% else %}
+    func new --name {{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}Api --template "HTTP trigger" --authlevel function
     {% endif %}
 
   # Create test project
