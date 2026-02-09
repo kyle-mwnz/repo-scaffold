@@ -52,6 +52,14 @@ pascal_case_name:
 # with 'when: false' are not available in tasks
 
 _tasks:
+  # Pre-check: verify required CLI tools are installed
+  - >-
+    echo "Checking required tools..." &&
+    (command -v func >/dev/null 2>&1 || { echo "ERROR: Azure Functions Core Tools (func) not found. Install from https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local"; exit 1; }) &&
+    (command -v dotnet >/dev/null 2>&1 || { echo "ERROR: .NET SDK (dotnet) not found. Install from https://dotnet.microsoft.com/download"; exit 1; }) &&
+    (command -v git >/dev/null 2>&1 || { echo "ERROR: Git not found. Install from https://git-scm.com/downloads"; exit 1; }) &&
+    echo "All required tools found."
+
   # Initialize .NET Azure Functions project
   - >-
     cd {{ serviceapplication_name }}-api/src &&
