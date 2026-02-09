@@ -13,8 +13,8 @@ serviceapplication_name:
   type: str
   help: |
     serviceapplication name (lowercase, alphanumeric, hyphens only).
-    This will be used to generate all Azure resource names.
-    Examples: customer-orders, payment-processor, inventory-sync
+    This will be used to generate all Azure resource names, and repo name suffixed with -api.
+    Examples: participant, directory
   validator: >-
     {% if not (serviceapplication_name | regex_search('^[a-z][a-z0-9-]{2,20}$')) %}
     Must be 3-21 characters, lowercase alphanumeric with hyphens, starting with a letter
@@ -74,7 +74,7 @@ _tasks:
     cd {{ serviceapplication_name }}-api/tests &&
     dotnet new xunit -n {{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.Tests &&
     cd {{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.Tests &&
-    dotnet add reference ../../src/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.csproj
+    dotnet add reference ../../src/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}-api.Functions/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.csproj
 
   # Initialize git repository
   - "cd {{ serviceapplication_name }}-api && git init && git add . && git commit -m 'Initial scaffold from repo-scaffolds template'"
