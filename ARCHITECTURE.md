@@ -104,8 +104,8 @@ The template requires only **2 user inputs**:
 
 | Variable | Value | Purpose |
 |----------|-------|---------|
-| `_dotnet_version` | `"10.0"` | Hardcoded .NET version |
-| `_pascal_case_name` | Derived from `project_name` | Used for .NET project naming |
+| `dotnet_version` | `"10.0"` | Hardcoded .NET version |
+| `pascal_case_name` | Derived from `project_name` | Used for .NET project naming |
 
 ### Scaffolded Projects
 

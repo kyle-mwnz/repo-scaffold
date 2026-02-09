@@ -111,7 +111,7 @@ project_name:
   type: str
   validator: "{% if not (project_name | regex_search('^[a-z][a-z0-9-]{2,20}$')) %}Invalid{% endif %}"
 
-_pascal_case_name:
+pascal_case_name:
   type: str
   default: "{{ project_name | replace('-', ' ') | title | replace(' ', '') }}"
   when: false

@@ -29,15 +29,17 @@ api_type:
     Event-driven (Service Bus triggers): event
 
 # ============================================
-# Computed Variables (Hidden from User)
+# Computed Variables (for templates only)
 # ============================================
 
-_dotnet_version:
+# These are used in .jinja template files, not in tasks
+# Tasks must use inline Jinja expressions
+dotnet_version:
   type: str
   default: "10.0"
   when: false
 
-_pascal_case_name:
+pascal_case_name:
   type: str
   default: "{{ project_name | replace('-', ' ') | title | replace(' ', '') }}"
   when: false
@@ -46,21 +48,23 @@ _pascal_case_name:
 # Post-Generation Tasks
 # ============================================
 
+# Note: Tasks use inline Jinja expressions because computed variables
+# with 'when: false' are not available in tasks
+
 _tasks:
   # Initialize .NET Azure Functions project
   - >-
-    cd {{ project_name }} &&
-    cd src &&
-    func init {{ _pascal_case_name }}.Functions
+    cd {{ project_name }}/src &&
+    func init {{ project_name | replace('-', ' ') | title | replace(' ', '') }}.Functions
     --worker-runtime dotnet-isolated
-    --target-framework net{{ _dotnet_version }}
+    --target-framework net10.0
 
   # Create initial function based on API type
   - >-
-    cd {{ project_name }}/src/{{ _pascal_case_name }}.Functions &&
+    cd {{ project_name }}/src/{{ project_name | replace('-', ' ') | title | replace(' ', '') }}.Functions &&
     {% if api_type == 'rest' %}
     func new --name HealthCheck --template "HTTP trigger" --authlevel anonymous &&
-    func new --name {{ _pascal_case_name }}Api --template "HTTP trigger" --authlevel function
+    func new --name {{ project_name | replace('-', ' ') | title | replace(' ', '') }}Api --template "HTTP trigger" --authlevel function
     {% elif api_type == 'soap' %}
     func new --name HealthCheck --template "HTTP trigger" --authlevel anonymous &&
     func new --name SoapEndpoint --template "HTTP trigger" --authlevel function
@@ -72,9 +76,9 @@ _tasks:
   # Create test project
   - >-
     cd {{ project_name }}/tests &&
-    dotnet new xunit -n {{ _pascal_case_name }}.Functions.Tests &&
-    cd {{ _pascal_case_name }}.Functions.Tests &&
-    dotnet add reference ../../src/{{ _pascal_case_name }}.Functions/{{ _pascal_case_name }}.Functions.csproj
+    dotnet new xunit -n {{ project_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.Tests &&
+    cd {{ project_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.Tests &&
+    dotnet add reference ../../src/{{ project_name | replace('-', ' ') | title | replace(' ', '') }}.Functions/{{ project_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.csproj
 
   # Initialize git repository
   - "cd {{ project_name }} && git init && git add . && git commit -m 'Initial scaffold from repo-scaffolds template'"

@@ -6,13 +6,13 @@ Azure Functions service ({{ api_type }} API).
 
 ### Prerequisites
 
-- [.NET SDK {{ _dotnet_version }}](https://dotnet.microsoft.com/download)
+- [.NET SDK {{ dotnet_version }}](https://dotnet.microsoft.com/download)
 - [Azure Functions Core Tools v4](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local)
 
 ### Local Development
 
 ```bash
-cd src/{{ _pascal_case_name }}.Functions
+cd src/{{ pascal_case_name }}.Functions
 dotnet restore
 func start
 ```
@@ -22,7 +22,7 @@ The function will be available at `http://localhost:7071`.
 ### Running Tests
 
 ```bash
-cd tests/{{ _pascal_case_name }}.Functions.Tests
+cd tests/{{ pascal_case_name }}.Functions.Tests
 dotnet test
 ```
 
@@ -37,9 +37,9 @@ dotnet test
 │       ├── nonprod.bicepparam
 │       └── prod.bicepparam
 ├── src/
-│   └── {{ _pascal_case_name }}.Functions/
+│   └── {{ pascal_case_name }}.Functions/
 └── tests/
-    └── {{ _pascal_case_name }}.Functions.Tests/
+    └── {{ pascal_case_name }}.Functions.Tests/
 ```
 
 ## Azure Resources

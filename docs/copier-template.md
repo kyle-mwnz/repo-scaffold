@@ -63,12 +63,13 @@ api_type:
 # Computed Variables (Hidden from User)
 # ============================================
 
-_dotnet_version:
+# Note: Variables without _ prefix so they can be used in tasks
+dotnet_version:
   type: str
   default: "10.0"
   when: false
 
-_pascal_case_name:
+pascal_case_name:
   type: str
   default: "{{ project_name | replace('-', ' ') | title | replace(' ', '') }}"
   when: false
@@ -82,16 +83,16 @@ _tasks:
   - >-
     cd {{ project_name }} &&
     cd src &&
-    func init {{ _pascal_case_name }}.Functions
+    func init {{ pascal_case_name }}.Functions
     --worker-runtime dotnet-isolated
-    --target-framework net{{ _dotnet_version }}
+    --target-framework net{{ dotnet_version }}
 
   # Create initial function based on API type
   - >-
-    cd {{ project_name }}/src/{{ _pascal_case_name }}.Functions &&
+    cd {{ project_name }}/src/{{ pascal_case_name }}.Functions &&
     {% if api_type == 'rest' %}
     func new --name HealthCheck --template "HTTP trigger" --authlevel anonymous &&
-    func new --name {{ _pascal_case_name }}Api --template "HTTP trigger" --authlevel function
+    func new --name {{ pascal_case_name }}Api --template "HTTP trigger" --authlevel function
     {% elif api_type == 'soap' %}
     func new --name HealthCheck --template "HTTP trigger" --authlevel anonymous &&
     func new --name SoapEndpoint --template "HTTP trigger" --authlevel function
@@ -103,9 +104,9 @@ _tasks:
   # Create test project
   - >-
     cd {{ project_name }}/tests &&
-    dotnet new xunit -n {{ _pascal_case_name }}.Functions.Tests &&
-    cd {{ _pascal_case_name }}.Functions.Tests &&
-    dotnet add reference ../../src/{{ _pascal_case_name }}.Functions/{{ _pascal_case_name }}.Functions.csproj
+    dotnet new xunit -n {{ pascal_case_name }}.Functions.Tests &&
+    cd {{ pascal_case_name }}.Functions.Tests &&
+    dotnet add reference ../../src/{{ pascal_case_name }}.Functions/{{ pascal_case_name }}.Functions.csproj
 
   # Initialize git repository
   - "cd {{ project_name }} && git init && git add . && git commit -m 'Initial scaffold from repo-scaffolds template'"
@@ -164,8 +165,8 @@ Variables calculated from inputs (hidden from user):
 
 | Variable | Value | Purpose |
 |----------|-------|---------|
-| `_dotnet_version` | `"10.0"` | Hardcoded .NET version |
-| `_pascal_case_name` | `customer-orders` → `CustomerOrders` | .NET project naming |
+| `dotnet_version` | `"10.0"` | Hardcoded .NET version |
+| `pascal_case_name` | `customer-orders` → `CustomerOrders` | .NET project naming |
 
 ## Jinja2 Filters
 
