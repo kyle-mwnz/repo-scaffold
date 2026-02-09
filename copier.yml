@@ -74,7 +74,7 @@ _tasks:
     cd {{ serviceapplication_name }}-api/tests &&
     dotnet new xunit -n {{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.Tests &&
     cd {{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.Tests &&
-    dotnet add reference ../../src/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}-api.Functions/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.csproj
+    dotnet add reference ../../src/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.csproj
 
   # Initialize git repository
   - "cd {{ serviceapplication_name }}-api && git init && git add . && git commit -m 'Initial scaffold from repo-scaffolds template'"
