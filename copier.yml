@@ -54,14 +54,14 @@ pascal_case_name:
 _tasks:
   # Initialize .NET Azure Functions project
   - >-
-    cd {{ serviceapplication_name }}/src &&
+    cd {{ serviceapplication_name }}-api/src &&
     func init {{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions
     --worker-runtime dotnet-isolated
     --target-framework net10.0
 
   # Create initial function based on API type
   - >-
-    cd {{ serviceapplication_name }}/src/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions &&
+    cd {{ serviceapplication_name }}-api/src/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions &&
     func new --name HealthCheck --template "HTTP trigger" --authlevel anonymous &&
     {% if api_type == 'event' %}
     func new --name ProcessMessage --template "Azure Service Bus Queue trigger"
@@ -71,13 +71,13 @@ _tasks:
 
   # Create test project
   - >-
-    cd {{ serviceapplication_name }}/tests &&
+    cd {{ serviceapplication_name }}-api/tests &&
     dotnet new xunit -n {{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.Tests &&
     cd {{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.Tests &&
     dotnet add reference ../../src/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions/{{ serviceapplication_name | replace('-', ' ') | title | replace(' ', '') }}.Functions.csproj
 
   # Initialize git repository
-  - "cd {{ serviceapplication_name }} && git init && git add . && git commit -m 'Initial scaffold from repo-scaffolds template'"
+  - "cd {{ serviceapplication_name }}-api && git init && git add . && git commit -m 'Initial scaffold from repo-scaffolds template'"
 
 # ============================================
 # File Handling
